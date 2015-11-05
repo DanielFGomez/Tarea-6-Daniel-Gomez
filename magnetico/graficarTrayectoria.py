@@ -1,0 +1,31 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.backends.backend_pdf import PdfPages
+
+X=np.loadtxt("trayectoria_E_alpha.dat",delimiter=",")
+t=X[:,0]
+x=X[:,1]
+y=X[:,2]
+z=X[:,3]
+print type(x)
+v=(x*x+y*y+z*z)**0.5
+fig1=plt.figure(1,figsize=(6,6))
+#plt.plot(t,v)
+plt.plot(x,y)
+plt.xlabel("x")
+plt.ylabel("y")
+fig2=plt.figure(2,figsize=(6,6))
+ax3d = fig2.add_subplot(111, projection='3d')
+
+ax3d.plot(x,y,z)
+ax3d.set_xlabel('X')
+ax3d.set_ylabel('Y')
+ax3d.set_zlabel('Z')
+fig2.show()
+'''
+grafica=PdfPages("trayectoria.pdf")
+grafica.savefig(fig1)
+grafica.savefig(fig2)
+grafica.close()
+'''

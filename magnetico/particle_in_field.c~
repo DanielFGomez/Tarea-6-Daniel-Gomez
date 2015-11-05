@@ -1,0 +1,191 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#define USAGE "./a.out valor"
+
+
+double calcularV(double K);
+double *reservar(int puntos);
+void resolver(double *x, double *y, double *z, double *vx, double *vy, double *vz);
+double dvx(double x, double y, double z, double vx, double vy, double vz);
+double dvy(double x, double y, double z, double vx, double vy, double vz);
+double dvz(double x, double y, double z, double vx, double vy, double vz);
+void guardar(double *x, double *y,double *z);
+
+double tmax;
+int nPoints;
+double dt;
+double B0;
+double RT;
+double pi;
+double v;
+double c;
+double q;
+double m;
+double g;
+
+main(int argc, char **argv){
+
+  if(argc!=3){
+    printf("USAGE: %s\n", USAGE);
+    exit(1);
+  }
+
+  tmax=100.0;
+  nPoints=1000000;
+  dt=tmax/nPoints;
+  B0=3.0*pow(10.0,-5.0);
+  RT=6378100;
+  pi=3.14159;
+  c=299792458;
+  q=1.6021766*pow(10.0,-19);
+  m=1.6726219*pow(10.0,-27);
+
+
+
+  double k=atof(argv[1])*1.60218*pow(10,-13);
+  v=calcularV(k);
+  printf("la velocidad es: %f\n",v);
+  g=1.0/sqrt(1-v*v/(c*c));
+  printf("g es: %f\n",g);
+  double alfa=atof(argv[2])*pi/180;
+
+  double *x;
+  double *y;
+  double *z;
+
+  double *vx;
+  double *vy;
+  double *vz;
+
+  x=reservar(nPoints);
+  y=reservar(nPoints);
+  z=reservar(nPoints);
+
+  vx=reservar(nPoints);
+  vy=reservar(nPoints);
+  vz=reservar(nPoints);
+
+
+  x[0]=2*RT;
+  y[0]=0;
+  z[0]=0;
+
+  vx[0]=0;
+  vy[0]=v*sin(alfa);
+  vz[0]=v*cos(alfa);
+
+  resolver(x,y,z,vx,vy,vz);
+
+  guardar(x,y,z);
+}
+
+double calcularV(double K){
+  return c*sqrt(1-pow(1/(1+K/(m*c*c)),2));
+}
+
+double *reservar(int puntos){
+  double *array=malloc(puntos*sizeof(double));
+  int i;
+    for(i=0;i<puntos;i++){
+	array[i]=0.0;
+      }
+  return array;
+}
+
+void resolver(double *x, double *y, double *z, double *vx, double *vy, double *vz){
+  int i;
+  double xk1,xk2,xk3,xk4,yk1,yk2,yk3,yk4,zk1,zk2,zk3,zk4,
+vxk1,vxk2,vxk3,vxk4,vyk1,vyk2,vyk3,vyk4,vzk1,vzk2,vzk3,vzk4;
+  for(i=0;i<nPoints-1;i++){
+
+    /*Parte 1*/
+    xk1=vx[i]*dt;
+    yk1=vy[i]*dt;
+    zk1=vz[i]*dt;
+
+    vxk1=dvx(x[i],y[i],z[i],vx[i],vy[i],vz[i])*dt;
+    vyk1=dvy(x[i],y[i],z[i],vx[i],vy[i],vz[i])*dt;
+    vzk1=dvz(x[i],y[i],z[i],vx[i],vy[i],vz[i])*dt;
+
+    /*Parte 2*/
+    xk2=(vx[i]+0.5*vxk1)*dt;
+    yk2=(vy[i]+0.5*vyk1)*dt;
+    zk2=(vz[i]+0.5*vzk1)*dt;
+
+    vxk2=dvx(x[i]+0.5*xk1,y[i]+0.5*yk1,z[i]+0.5*zk1,
+	 vx[i]+0.5*vxk1,vy[i]+0.5*vyk1,vz[i]+0.5*vzk1)*dt;
+
+    vyk2=dvy(x[i]+0.5*xk1,y[i]+0.5*yk1,z[i]+0.5*zk1,
+	 vx[i]+0.5*vxk1,vy[i]+0.5*vyk1,vz[i]+0.5*vzk1)*dt;
+
+    vzk2=dvz(x[i]+0.5*xk1,y[i]+0.5*yk1,z[i]+0.5*zk1,
+	 vx[i]+0.5*vxk1,vy[i]+0.5*vyk1,vz[i]+0.5*vzk1)*dt;
+
+    /*Parte 3*/
+    xk3=(vx[i]+0.5*vxk2)*dt;
+    yk3=(vy[i]+0.5*vyk2)*dt;
+    zk3=(vz[i]+0.5*vzk2)*dt;
+
+    vxk3=dvx(x[i]+0.5*xk2,y[i]+0.5*yk2,z[i]+0.5*zk2,
+	 vx[i]+0.5*vxk2,vy[i]+0.5*vyk2,vz[i]+0.5*vzk2)*dt;
+  
+    vyk3=dvy(x[i]+0.5*xk2,y[i]+0.5*yk2,z[i]+0.5*zk2,
+	 vx[i]+0.5*vxk2,vy[i]+0.5*vyk2,vz[i]+0.5*vzk2)*dt;
+
+    vzk3=dvz(x[i]+0.5*xk2,y[i]+0.5*yk2,z[i]+0.5*zk2,
+	 vx[i]+0.5*vxk2,vy[i]+0.5*vyk2,vz[i]+0.5*vzk2)*dt;
+
+    /*Parte 4*/
+    xk4=(vx[i]+vxk3)*dt;
+    yk4=(vy[i]+vyk3)*dt;
+    zk4=(vz[i]+vzk3)*dt;
+
+    vxk4=dvx(x[i]+xk3,y[i]+yk3,z[i]+zk3,
+         vx[i]+vxk3,vy[i]+vyk3,vz[i]+vzk3)*dt;
+
+    vyk4=dvy(x[i]+xk3,y[i]+yk3,z[i]+zk3,
+	 vx[i]+vxk3,vy[i]+vyk3,vz[i]+vzk3)*dt;
+
+    vzk4=dvz(x[i]+xk3,y[i]+yk3,z[i]+zk3,
+	 vx[i]+vxk3,vy[i]+vyk3,vz[i]+vzk3)*dt;
+
+    x[i+1]=x[i]+(xk1+2*xk2+2*xk3+xk4)/6.0;
+    y[i+1]=y[i]+(yk1+2*yk2+2*yk3+yk4)/6.0;
+    z[i+1]=z[i]+(zk1+2*zk2+2*zk3+zk4)/6.0;
+    vx[i+1]=vx[i]+(vxk1+2*vxk2+2*vxk3+vxk4)/6.0;
+    vy[i+1]=vy[i]+(vyk1+2*vyk2+2*vyk3+vyk4)/6.0;
+    vz[i+1]=vz[i]+(vzk1+2*vzk2+2*vzk3+vzk4)/6.0;
+    
+
+  }
+}
+
+double dvx(double x, double y, double z, double vx, double vy, double vz){
+  double r=sqrt(x*x+y*y+z*z);
+  return -q*v*B0*pow(RT,3)/pow(r,5)*(vy*(2*z*z-x*x-y*y)-vz*(3*y*z))/(m*g);
+}
+
+double dvy(double x, double y, double z, double vx, double vy, double vz){
+  double r=sqrt(x*x+y*y+z*z);
+  return -q*v*B0*pow(RT,3)/pow(r,5)*(-vx*(2*z*z-x*x-y*y)+vz*(3*x*z))/(m*g);
+}
+
+double dvz(double x, double y, double z, double vx, double vy, double vz){
+  double r=sqrt(x*x+y*y+z*z);
+  return -q*v*B0*pow(RT,3)/pow(r,5)*(vx*(3*y*z)-vy*(3*x*z))/(m*g);
+}
+
+
+void guardar(double *x, double *y, double *z){
+  FILE *in;
+  int n;
+  char filename[100]="trayectoria_E_alpha.dat";
+  in = fopen(filename,"w");
+  double t;
+  for(n=0;n<nPoints;n++){
+    t=n*dt;
+    fprintf(in,"%f, %f, %f, %f\n",t, x[n],y[n],z[n]);
+  }
+  fclose(in);
+}
